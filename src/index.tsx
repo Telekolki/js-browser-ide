@@ -6,31 +6,26 @@ import { unpkgPathPlugin } from './plugins/unpkg-path-plugin'
 const App = () => {
     const [input, setInput] = useState('');
     const [code, setCode] = useState('');
-    const esBuildService = useRef<any>();
 
-    const startService = async () => {
-        return esBuildService.current = await esbuild.initialize({
+    const startService = () => {
+        esbuild.initialize({
             worker: true,
             wasmURL: '/esbuild.wasm'
         })
     };
 
-    // useEffect( () => {
-    //     startService();
-    // }, []);
+    useEffect( () => {
+        startService();
+    }, []);
 
     const onSubmit = async () => {
-        if (!esBuildService) {
-            return;
-        }
-
-        const result = startService().then(() => {esbuild.build({
+        const result = await esbuild.build({
             entryPoints: ['index.js'],
             bundle: true,
             write: false,
-            format: 'iife',
             plugins: [unpkgPathPlugin()]
-        })});
+        });
+        setCode(result.outputFiles[0].text);
     }
 
     return <div>
