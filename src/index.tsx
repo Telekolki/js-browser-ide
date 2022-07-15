@@ -1,6 +1,7 @@
 import ReactDom from 'react-dom';
 import { useState, useRef, useEffect } from 'react';
 import * as esbuild from 'esbuild-wasm';
+import { unpkgPathPlugin } from './plugins/unpkg-path-plugin'
 
 const App = () => {
     const [input, setInput] = useState('');
@@ -8,27 +9,28 @@ const App = () => {
     const esBuildService = useRef<any>();
 
     const startService = async () => {
-        esBuildService.current = await esbuild.startService({
+        return esBuildService.current = await esbuild.initialize({
             worker: true,
             wasmURL: '/esbuild.wasm'
-        });
+        })
     };
 
-    useEffect( () => {
-        startService();
-    }, []);
+    // useEffect( () => {
+    //     startService();
+    // }, []);
 
     const onSubmit = async () => {
         if (!esBuildService) {
             return;
         }
 
-        const result = await esBuildService.current.transform(input, {
-            loader: 'jsx',
-            target: 'es2015'
-        })
-
-        setCode(result.code);
+        const result = startService().then(() => {esbuild.build({
+            entryPoints: ['index.js'],
+            bundle: true,
+            write: false,
+            format: 'iife',
+            plugins: [unpkgPathPlugin()]
+        })});
     }
 
     return <div>
